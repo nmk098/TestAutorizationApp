@@ -22,7 +22,7 @@ struct captchaLoginBody: Codable {
     var value: String?
 }
 
-struct loginResponseBody: Codable {
+struct LoginResponseBody: Codable {
     var resultCode: String
     var resultMessage: String
     var data: TokenResponse
@@ -30,7 +30,5 @@ struct loginResponseBody: Codable {
 
 struct TokenResponse: Codable {
     var tokenType: String?
-    var expiresIn: Int
     var accessToken: String?
-    var refreshToken: String?
 }

@@ -7,10 +7,17 @@
 
 import UIKit
 
+enum ResponseError: Error {
+    case badResponse(URLResponse?)
+    case badData
+    case badLocalUrl
+}
+
 class LogInViewController: UIViewController {
-   
+    
     var captchaKey: String?
     var token: String = ""
+    var errorString: String?
     //MARK: view's
     
     private lazy var nameField: UITextField = {
@@ -21,6 +28,7 @@ class LogInViewController: UIViewController {
         textField.backgroundColor = UIColor(named: "backTF")
         textField.autocorrectionType = .no
         textField.autocapitalizationType = .none
+        textField.keyboardType = .default
         textField.translatesAutoresizingMaskIntoConstraints = false
         return textField
     }()
@@ -70,11 +78,25 @@ class LogInViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         fetchCaptchaImageandKey()
+        nameField.text = ""
+        passwordField.text = ""
+        captchaField.text = ""
     }
+    
     
     override func viewDidLoad() {
         
         super.viewDidLoad()
+        
+        if UserDefaults.standard.string(forKey: "jsonToken")?.isEmpty == false {
+            DispatchQueue.main.async {
+                let biovc = BIOViewController()
+                self.navigationController?.pushViewController(biovc, animated: false)
+                self.navigationController?.isNavigationBarHidden = true
+            }
+        } else {
+        
+        }
         
         view.backgroundColor = UIColor(named: "AccentColor")
         
@@ -123,16 +145,34 @@ class LogInViewController: UIViewController {
     
     @objc
     func logInButtonTap() {
-        tryAuth()
-       let bioVC = BIOViewController()
-        navigationController?.pushViewController(bioVC, animated: true)
-        navigationController?.isNavigationBarHidden = true
+        tryAuth { result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let decodedToken):
+                    UserDefaults.standard.set(decodedToken, forKey: "jsonToken")
+                    
+                    let bioVC = BIOViewController()
+                    self.navigationController?.pushViewController(bioVC, animated: true)
+                    self.navigationController?.isNavigationBarHidden = true
+                    
+                case .failure(let error):
+                    
+                    let alertController = UIAlertController(title: "Authorization Error",
+                                                            message: error.localizedDescription,
+                                                            preferredStyle: .alert)
+                    let action = UIAlertAction(title: "OK", style: .cancel)
+                    alertController.addAction(action)
+                    self.present(alertController, animated: true)
+                    
+                }
+            }
+        }
     }
-    
 }
 
 extension LogInViewController {
-    func tryAuth() {
+    
+    func tryAuth(completion: @escaping(Result<String, ResponseError>) -> Void) {
        
         guard let url = URL(string: "https://api-events.pfdo.ru/v1/auth") else { return }
        
@@ -140,72 +180,47 @@ extension LogInViewController {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
+        guard let userName = nameField.text else { return }
+        guard let password = passwordField.text else { return }
+        
         let body: [String: Any] = [
-            "username" : nameField.text,
-            "password" : passwordField.text,
+            "username" : userName,
+            "password" : password,
             "captcha"  : ["key": captchaKey, "value": captchaField.text]
         ]
         
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
         
-        URLSession.shared.dataTask(with: request) {data, response, error in
+        URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
+            if let error = error {
+                print(error.localizedDescription )
+            }
+            
             guard let data = data else {
                 print("no data")
                 return
             }
-            let decoder = JSONDecoder()
-            decoder.keyDecodingStrategy = .convertFromSnakeCase
-            guard let loginResponce = try? decoder.decode(loginResponseBody.self, from: data) else {
+            
+            guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
+                completion(.failure(ResponseError.badResponse(response)))
                 return
             }
+            let decoder = JSONDecoder()
+            decoder.keyDecodingStrategy = .convertFromSnakeCase
+   
+            guard let loginResponce = try? decoder.decode(LoginResponseBody.self, from: data) else { return }
+            
             guard let decodedToken = loginResponce.data.accessToken else { return }
-            self.token = decodedToken
+            self?.token = decodedToken
+            completion(.success(decodedToken))
         }.resume()
     }
-    
-    //            guard let data = data else { return}
-    //                 let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
-    //
-    //            let decoder = JSONDecoder()
-    //            decoder.keyDecodingStrategy = .convertFromSnakeCase
-    //
-    
-//    func logIn(username: String, password: String, captcha: [captchaLoginBody]) {
-//        guard let url = URL(string: "https://api-events.pfdo.ru/v1/auth") else { return }
-//
-//        let body = loginRequestBody(username: username, password: password, captcha: captcha)
-//
-//        var request = URLRequest(url: url)
-//        request.httpMethod = "POST"
-//        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-//        request.httpBody = try? JSONEncoder().encode(body)
-//
-//        URLSession.shared.dataTask(with: request) { data, response, error in
-//            guard let data = data, error == nil else {
-//                print("no data")
-//                return
-//            }
-//            let decoder = JSONDecoder()
-//            decoder.keyDecodingStrategy = .convertFromSnakeCase
-//            guard let loginResponce = try? decoder.decode(loginResponseBody.self, from: data) else {
-//                print("no response")
-//                return
-//            }
-//            guard let token = loginResponce.data.accessToken else {
-//                print("no token")
-//                return
-//            }
-//            self.token = token
-//
-//        }.resume()
-//
-//    }
     
         func fetchCaptchaImageandKey() {
             guard let url = URL(string: "https://api-events.pfdo.ru/v1/captcha") else { return }
             var request = URLRequest(url: url)
             request.httpMethod = "POST"
-            URLSession.shared.dataTask(with: request) { data, response, error in
+            URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
                 guard let data = data else {
                     return
                 }
@@ -217,16 +232,22 @@ extension LogInViewController {
                 guard let imageData = captcha.data.imageData else {
                     return
                 }
+                
+                guard let decodedKey = captcha.data.key else {
+                    print("no key")
+                    return
+                }
+                
+                self?.captchaKey = decodedKey
+                
                 guard let decodedData: Data = Data(base64Encoded: imageData.base64WithoutPrefix()) else {
                     return
                 }
                 
-                DispatchQueue.main.async {
-                    self.captchaImageView.image = UIImage(data: decodedData)
+                DispatchQueue.main.async { [weak self] in
+                    self?.captchaImageView.image = UIImage(data: decodedData)
                 }
-           
             }.resume()
         }
-        
     }
 

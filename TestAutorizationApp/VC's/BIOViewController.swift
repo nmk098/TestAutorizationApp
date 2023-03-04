@@ -22,6 +22,7 @@ class BIOViewController: UIViewController {
     private lazy var nameLabel: UILabel = {
         var label = UILabel()
         label.tintColor = .black
+        label.textAlignment = .center
         label.backgroundColor = .white
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
@@ -36,7 +37,6 @@ class BIOViewController: UIViewController {
         view.backgroundColor = UIColor(named: "AccentColor")
         view.addSubview(exitButton)
         view.addSubview(nameLabel)
-        nameLabel.layer.cornerRadius = 10
         
         NSLayoutConstraint.activate([
             exitButton.topAnchor.constraint(equalTo: view.topAnchor, constant: 50),
@@ -73,20 +73,23 @@ extension BIOViewController {
         request.httpMethod = "GET"
         request.setValue("Bearer \(json)", forHTTPHeaderField: "authorization")
         request.addValue("application/json", forHTTPHeaderField: "accept")
-        URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
-            guard let data = data else {
-                return }
-            
-            let decoder = JSONDecoder()
-            decoder.keyDecodingStrategy = .convertFromSnakeCase
-            guard let decodeResponse = try? decoder.decode(Bio.self, from: data) else {
-                print("cant decode")
-                return
-            }
-            DispatchQueue.main.async {
-                let decodedName = decodeResponse.data.profile.name
-                self?.nameLabel.text = decodedName
-            }
-        }.resume()
+        DispatchQueue.global(qos: .utility).async {
+            URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
+                guard let data = data else {
+                    return }
+                
+                let decoder = JSONDecoder()
+                decoder.keyDecodingStrategy = .convertFromSnakeCase
+                guard let decodeResponse = try? decoder.decode(Bio.self, from: data) else {
+                    print("cant decode")
+                    return
+                }
+                DispatchQueue.main.async {
+                    let decodedName = decodeResponse.data.profile.name
+                    self?.nameLabel.text = decodedName
+                }
+            }.resume()
+        }
     }
 }
+

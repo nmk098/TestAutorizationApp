@@ -220,34 +220,37 @@ extension LogInViewController {
             guard let url = URL(string: "https://api-events.pfdo.ru/v1/captcha") else { return }
             var request = URLRequest(url: url)
             request.httpMethod = "POST"
-            URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
-                guard let data = data else {
-                    return
-                }
-                let decoder = JSONDecoder()
-                decoder.keyDecodingStrategy = .convertFromSnakeCase
-                guard let captcha = try? decoder.decode(CaptchaResponse.self, from: data) else {
-                    return
-                }
-                guard let imageData = captcha.data.imageData else {
-                    return
-                }
-                
-                guard let decodedKey = captcha.data.key else {
-                    print("no key")
-                    return
-                }
-                
-                self?.captchaKey = decodedKey
-                
-                guard let decodedData: Data = Data(base64Encoded: imageData.base64WithoutPrefix()) else {
-                    return
-                }
-                
-                DispatchQueue.main.async { [weak self] in
-                    self?.captchaImageView.image = UIImage(data: decodedData)
-                }
-            }.resume()
+            DispatchQueue.global(qos: .utility).async {
+                URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
+                    guard let data = data else {
+                        return
+                    }
+                    let decoder = JSONDecoder()
+                    decoder.keyDecodingStrategy = .convertFromSnakeCase
+                    guard let captcha = try? decoder.decode(CaptchaResponse.self, from: data) else {
+                        return
+                    }
+                    guard let imageData = captcha.data.imageData else {
+                        return
+                    }
+                    
+                    guard let decodedKey = captcha.data.key else {
+                        print("no key")
+                        return
+                    }
+                    
+                    self?.captchaKey = decodedKey
+                    
+                    guard let decodedData: Data = Data(base64Encoded: imageData.base64WithoutPrefix()) else {
+                        return
+                    }
+                    
+                    DispatchQueue.main.async { [weak self] in
+                        self?.captchaImageView.image = UIImage(data: decodedData)
+                    }
+                }.resume()
+            }
+         
         }
     }
 

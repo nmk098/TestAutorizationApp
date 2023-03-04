@@ -9,7 +9,7 @@ import UIKit
 
 class BIOViewController: UIViewController {
     
-    private lazy var exitButton: UIButton = {
+    lazy var exitButton: UIButton = {
         var button = UIButton()
         button.setTitle("LogOut", for: .normal)
         button.backgroundColor = UIColor(named: "buttonBG")
@@ -19,7 +19,7 @@ class BIOViewController: UIViewController {
         return button
     }()
     
-    private lazy var nameLabel: UILabel = {
+    lazy var nameLabel: UILabel = {
         var label = UILabel()
         label.tintColor = .black
         label.textAlignment = .center
@@ -60,36 +60,4 @@ class BIOViewController: UIViewController {
     }
 }
 
-extension BIOViewController {
-    func fetchInfo() {
-        guard let url = URL(string: "https://api-events.pfdo.ru/v1/user") else {
-            print("url is not avalible")
-            return
-        }
-        var request = URLRequest(url: url)
-        
-        guard let json = UserDefaults.standard.string(forKey: "jsonToken") else { return }
-        
-        request.httpMethod = "GET"
-        request.setValue("Bearer \(json)", forHTTPHeaderField: "authorization")
-        request.addValue("application/json", forHTTPHeaderField: "accept")
-        DispatchQueue.global(qos: .utility).async {
-            URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
-                guard let data = data else {
-                    return }
-                
-                let decoder = JSONDecoder()
-                decoder.keyDecodingStrategy = .convertFromSnakeCase
-                guard let decodeResponse = try? decoder.decode(Bio.self, from: data) else {
-                    print("cant decode")
-                    return
-                }
-                DispatchQueue.main.async {
-                    let decodedName = decodeResponse.data.profile.name
-                    self?.nameLabel.text = decodedName
-                }
-            }.resume()
-        }
-    }
-}
 

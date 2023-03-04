@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		C611D6AE29B3CF1800599F6D /* LoginVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = C611D6AD29B3CF1800599F6D /* LoginVC.swift */; };
+		C611D6B029B3CF7500599F6D /* Bio.swift in Sources */ = {isa = PBXBuildFile; fileRef = C611D6AF29B3CF7500599F6D /* Bio.swift */; };
 		C646F31C29AD312A00AEA506 /* String.swift in Sources */ = {isa = PBXBuildFile; fileRef = C646F31B29AD312A00AEA506 /* String.swift */; };
 		C646F31E29AD3C1100AEA506 /* BIOViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C646F31D29AD3C1100AEA506 /* BIOViewController.swift */; };
 		C646F34429AE34B900AEA506 /* Login.swift in Sources */ = {isa = PBXBuildFile; fileRef = C646F34329AE34B900AEA506 /* Login.swift */; };
@@ -20,6 +22,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		C611D6AD29B3CF1800599F6D /* LoginVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginVC.swift; sourceTree = "<group>"; };
+		C611D6AF29B3CF7500599F6D /* Bio.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Bio.swift; sourceTree = "<group>"; };
 		C646F31B29AD312A00AEA506 /* String.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = String.swift; sourceTree = "<group>"; };
 		C646F31D29AD3C1100AEA506 /* BIOViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BIOViewController.swift; sourceTree = "<group>"; };
 		C646F34329AE34B900AEA506 /* Login.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Login.swift; sourceTree = "<group>"; };
@@ -58,6 +62,8 @@
 			isa = PBXGroup;
 			children = (
 				C646F31B29AD312A00AEA506 /* String.swift */,
+				C611D6AD29B3CF1800599F6D /* LoginVC.swift */,
+				C611D6AF29B3CF7500599F6D /* Bio.swift */,
 			);
 			path = Extension;
 			sourceTree = "<group>";
@@ -181,6 +187,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C611D6AE29B3CF1800599F6D /* LoginVC.swift in Sources */,
 				C646F34429AE34B900AEA506 /* Login.swift in Sources */,
 				C646F31C29AD312A00AEA506 /* String.swift in Sources */,
 				C6D17BA129AC0AC10007909C /* LogInViewController.swift in Sources */,
@@ -188,6 +195,7 @@
 				C646F31E29AD3C1100AEA506 /* BIOViewController.swift in Sources */,
 				C6D17B9F29AC0AC10007909C /* SceneDelegate.swift in Sources */,
 				C646F34D29AE84DB00AEA506 /* Bio.swift in Sources */,
+				C611D6B029B3CF7500599F6D /* Bio.swift in Sources */,
 				C6D17BB129AC0B390007909C /* Captcha.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

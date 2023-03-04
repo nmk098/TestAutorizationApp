@@ -18,9 +18,9 @@ class LogInViewController: UIViewController {
     var captchaKey: String?
     var token: String = ""
     var errorString: String?
-    //MARK: view's
     
-    private lazy var nameField: UITextField = {
+    //MARK: view's
+    lazy var nameField: UITextField = {
         var textField = UITextField()
         textField.placeholder = "enter login"
         textField.font = .systemFont(ofSize: 18, weight: .regular)
@@ -33,7 +33,7 @@ class LogInViewController: UIViewController {
         return textField
     }()
     
-    private lazy var passwordField: UITextField = {
+    lazy var passwordField: UITextField = {
         var textField = UITextField()
         textField.placeholder = "enter password"
         textField.font = .systemFont(ofSize: 18, weight: .light)
@@ -46,7 +46,7 @@ class LogInViewController: UIViewController {
         return textField
     }()
     
-    private lazy var captchaField: UITextField = {
+    lazy var captchaField: UITextField = {
         var textField = UITextField()
         textField.placeholder = "enter captcha"
         textField.font = .systemFont(ofSize: 18, weight: .regular)
@@ -58,7 +58,7 @@ class LogInViewController: UIViewController {
         return textField
     }()
     
-    private lazy var logInButton: UIButton = {
+    lazy var logInButton: UIButton = {
         var button = UIButton()
         button.setTitle("LogIn", for: .normal)
         button.tintColor = .white
@@ -69,7 +69,7 @@ class LogInViewController: UIViewController {
         return button
     }()
     
-    private lazy var captchaImageView: UIImageView = {
+    lazy var captchaImageView: UIImageView = {
         var image = UIImageView()
         image.translatesAutoresizingMaskIntoConstraints = false
         return image
@@ -83,7 +83,6 @@ class LogInViewController: UIViewController {
         captchaField.text = ""
     }
     
-    
     override func viewDidLoad() {
         
         super.viewDidLoad()
@@ -95,7 +94,7 @@ class LogInViewController: UIViewController {
                 self.navigationController?.isNavigationBarHidden = true
             }
         } else {
-        
+            
         }
         
         view.backgroundColor = UIColor(named: "AccentColor")
@@ -170,87 +169,4 @@ class LogInViewController: UIViewController {
     }
 }
 
-extension LogInViewController {
-    
-    func tryAuth(completion: @escaping(Result<String, ResponseError>) -> Void) {
-       
-        guard let url = URL(string: "https://api-events.pfdo.ru/v1/auth") else { return }
-       
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        guard let userName = nameField.text else { return }
-        guard let password = passwordField.text else { return }
-        
-        let body: [String: Any] = [
-            "username" : userName,
-            "password" : password,
-            "captcha"  : ["key": captchaKey, "value": captchaField.text]
-        ]
-        
-        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
-        
-        URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
-            if let error = error {
-                print(error.localizedDescription )
-            }
-            
-            guard let data = data else {
-                print("no data")
-                return
-            }
-            
-            guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
-                completion(.failure(ResponseError.badResponse(response)))
-                return
-            }
-            let decoder = JSONDecoder()
-            decoder.keyDecodingStrategy = .convertFromSnakeCase
-   
-            guard let loginResponce = try? decoder.decode(LoginResponseBody.self, from: data) else { return }
-            
-            guard let decodedToken = loginResponce.data.accessToken else { return }
-            self?.token = decodedToken
-            completion(.success(decodedToken))
-        }.resume()
-    }
-    
-        func fetchCaptchaImageandKey() {
-            guard let url = URL(string: "https://api-events.pfdo.ru/v1/captcha") else { return }
-            var request = URLRequest(url: url)
-            request.httpMethod = "POST"
-            DispatchQueue.global(qos: .utility).async {
-                URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
-                    guard let data = data else {
-                        return
-                    }
-                    let decoder = JSONDecoder()
-                    decoder.keyDecodingStrategy = .convertFromSnakeCase
-                    guard let captcha = try? decoder.decode(CaptchaResponse.self, from: data) else {
-                        return
-                    }
-                    guard let imageData = captcha.data.imageData else {
-                        return
-                    }
-                    
-                    guard let decodedKey = captcha.data.key else {
-                        print("no key")
-                        return
-                    }
-                    
-                    self?.captchaKey = decodedKey
-                    
-                    guard let decodedData: Data = Data(base64Encoded: imageData.base64WithoutPrefix()) else {
-                        return
-                    }
-                    
-                    DispatchQueue.main.async { [weak self] in
-                        self?.captchaImageView.image = UIImage(data: decodedData)
-                    }
-                }.resume()
-            }
-         
-        }
-    }
 
